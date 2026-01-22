@@ -66,6 +66,7 @@ public class UserService {
         dto.id = user.getId();
         dto.username = user.getUsername();
         dto.email = user.getEmail();
+        dto.role = user.getRole();
         return dto;
     }
 }
