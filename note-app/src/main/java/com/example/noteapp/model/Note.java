@@ -26,9 +26,10 @@ public class Note {
         // JPA constructor
     }
 
-    public Note(String title, String content) {
+    public Note(String title, String content, User creator) {
         this.title = title;
         this.content = content;
+        this.creator = creator;
     }
 
     public Long getId() {
