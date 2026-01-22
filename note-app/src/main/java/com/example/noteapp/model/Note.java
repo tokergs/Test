@@ -1,10 +1,7 @@
 package com.example.noteapp.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
 import java.time.Instant;
 
 @Entity
@@ -20,6 +17,10 @@ public class Note {
     private String content;
 
     private Instant createdAt = Instant.now();
+
+    @ManyToOne
+    @JoinColumn(name = "user_id", nullable = false)
+    private User creator;
 
     public Note() {
         // JPA constructor
@@ -56,5 +57,13 @@ public class Note {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public User getCreator() {
+        return creator;
+    }
+
+    public void setCreator(User creator) {
+        this.creator = creator;
     }
 }

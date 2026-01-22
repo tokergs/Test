@@ -4,6 +4,7 @@ import com.example.noteapp.dto.UserRequestDto;
 import com.example.noteapp.dto.UserResponseDto;
 import com.example.noteapp.model.User;
 import com.example.noteapp.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,8 +15,11 @@ public class UserService {
 
     private final UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
+    private final PasswordEncoder passwordEncoder;
+
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public List<UserResponseDto> getAllUsers() {
@@ -48,16 +52,12 @@ public class UserService {
         return convertToResponseDto(updated);
     }
 
-    public void deleteUser(Integer id) {
-        userRepository.deleteById(id);
-    }
-
     private User convertToEntity(UserRequestDto dto) {
         User user = new User();
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
-        user.setPassword(dto.getPassword());
-        user.setRole("Role");
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        user.setRole("USER");
         return user;
     }
 
