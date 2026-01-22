@@ -1,5 +1,6 @@
 package com.example.noteapp.controller;
 
+import com.example.noteapp.dto.NoteRequestDto;
 import com.example.noteapp.model.Note;
 import com.example.noteapp.model.User;
 import com.example.noteapp.repository.NoteRepository;
@@ -28,7 +29,7 @@ public class NoteController {
 
 
     @GetMapping
-    public List<Note> listNotes() {
+    public List<NoteRequestDto> listNotes() {
         return noteRepository.findAll();
     }
 
