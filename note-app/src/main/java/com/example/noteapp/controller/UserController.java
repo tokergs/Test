@@ -2,12 +2,18 @@ package com.example.noteapp.controller;
 
 import com.example.noteapp.dto.UserRequestDto;
 import com.example.noteapp.dto.UserResponseDto;
-import com.example.noteapp.model.User;
 import com.example.noteapp.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 
 import java.util.List;
 
@@ -21,18 +27,10 @@ public class UserController {
         this.userService = userService;
     }
 
+    // 1. Регистрация - публичный доступ
     @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody UserRequestDto request) {
+    public ResponseEntity<?> register(@Valid @RequestBody UserRequestDto request) {
         try {
-            if (request.getUsername() == null || request.getUsername().trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(new ErrorResponse("Username is required"));
-            }
-            if (request.getPassword() == null || request.getPassword().trim().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(new ErrorResponse("Password is required"));
-            }
-
             UserResponseDto user = userService.createUser(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(user);
         } catch (IllegalArgumentException e) {
@@ -41,22 +39,48 @@ public class UserController {
         }
     }
 
-    public record RegisterRequest(String username, String password) {
+    // 2. Получить свой профиль - только для авторизованных
+    @SecurityRequirement(name = "bearerAuth") // требует токен
+    @GetMapping("/me")
+    public ResponseEntity<UserResponseDto> getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        UserResponseDto user = userService.getUserByUsername(username);
+        return ResponseEntity.ok(user);
     }
 
-    public record RegisterResponse(Long id, String username, String message) {
+    // 3. Получить пользователя по ID - с проверкой доступа
+    @GetMapping("/{id}")
+    public ResponseEntity<UserResponseDto> getUserById(@PathVariable Integer id) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = authentication.getName();
+
+        UserResponseDto user = userService.getUserByIdWithAccessCheck(id, currentUsername);
+        return ResponseEntity.ok(user);
     }
 
-    public record ErrorResponse(String message) {
-    }
-    /**
-     * GET /users
-     * Get all users
-     * Returns: 200 OK with list of users
-     */
+    // 4. Получить ВСЕХ пользователей - ТОЛЬКО для ADMIN
+    @SecurityRequirement(name = "bearerAuth") // требует токен
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping
     public ResponseEntity<List<UserResponseDto>> getAllUsers() {
         List<UserResponseDto> users = userService.getAllUsers();
         return ResponseEntity.ok(users);
+    }
+
+    // 5. Обновить свой профиль
+    @PutMapping("/me")
+    public ResponseEntity<UserResponseDto> updateCurrentUser(
+            @Valid @RequestBody UserRequestDto request) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        UserResponseDto updatedUser = userService.updateUserByUsername(username, request);
+        return ResponseEntity.ok(updatedUser);
+    }
+
+    // Вспомогательные классы для ответов
+    public record ErrorResponse(String message) {
     }
 }
