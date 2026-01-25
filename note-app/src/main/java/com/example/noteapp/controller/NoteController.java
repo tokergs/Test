@@ -1,6 +1,7 @@
 package com.example.noteapp.controller;
 
 import com.example.noteapp.dto.NoteRequestDto;
+import com.example.noteapp.dto.NoteResponseDto;
 import com.example.noteapp.model.Note;
 import com.example.noteapp.model.User;
 import com.example.noteapp.repository.NoteRepository;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import java.util.stream.Collectors;
 import java.util.List;
 
 @RestController
@@ -30,7 +33,12 @@ public class NoteController {
 
     @GetMapping
     public List<NoteRequestDto> listNotes() {
-        return noteRepository.findAll();
+        User currentUser = getCurrentUser();
+
+        return noteRepository.findAllByCreator(currentUser)
+                .stream()
+                .map(this::toDto)
+                .toList();
     }
 
     @PostMapping
@@ -45,6 +53,13 @@ public class NoteController {
         String username = authentication.getName();
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found: " + username));
+    }
+
+    private NoteRequestDto toDto(Note note) {
+        NoteRequestDto dto = new NoteRequestDto();
+        dto.setTitle(note.getTitle());
+        dto.setContent(note.getContent());
+        return dto;
     }
 
     public record CreateNoteRequest(

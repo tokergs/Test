@@ -42,7 +42,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .userDetailsService(userDetailsService)
-                .httpBasic(Customizer.withDefaults());
+                .httpBasic(Customizer.withDefaults()); //HTTTP basic auth
 
         // For H2 console rendering in a browser frame
         http.headers(headers -> headers.frameOptions(frame -> frame.sameOrigin()));
