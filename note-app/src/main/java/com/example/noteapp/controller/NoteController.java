@@ -22,12 +22,15 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.util.List;
 
 @RestController
 @RequestMapping("/notes")
 public class NoteController {
 
+    private static final Logger logger = LoggerFactory.getLogger(NoteController.class);
     private final NoteService noteService;
     private final UserRepository userRepository;
 
@@ -40,6 +43,10 @@ public class NoteController {
     @SecurityRequirement(name = "bearerAuth")
     @GetMapping
     public List<NoteResponseDto> listNotes() {
+        User currentUser = getCurrentUser();
+
+        // ДОБАВЬ ЛОГИРОВАНИЕ:
+        logger.info("User {} is accessing their notes", currentUser.getUsername());
         return noteService.getUserNotes(getCurrentUser());
     }
 
@@ -58,4 +65,12 @@ public class NoteController {
         return userRepository.findByUsername(username)
                 .orElseThrow();
     }
+
+    @DeleteMapping("/{id}")
+    public String deleteNote(@PathVariable Long id) {
+        User currentUser = getCurrentUser();
+        noteService.delete(id, currentUser);
+        return "Note deleted successfully";
+    }
+
 }

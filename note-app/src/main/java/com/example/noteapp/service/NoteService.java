@@ -8,6 +8,7 @@ import com.example.noteapp.repository.NoteRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class NoteService {
@@ -34,6 +35,17 @@ public class NoteService {
         );
 
         return toDto(noteRepository.save(note));
+    }
+
+    public void delete(Long id, User user) {
+        Note note = noteRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Note not found"));
+
+        if (!note.getCreator().getId().equals(user.getId())) {
+            throw new RuntimeException("Access denied: You do not own this note");
+        }
+
+        noteRepository.delete(note);
     }
 
     private NoteResponseDto toDto(Note note) {

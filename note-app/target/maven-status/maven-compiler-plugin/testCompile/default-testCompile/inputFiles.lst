@@ -1,1 +1,6 @@
-C:\Users\ponrn\OneDrive\Desktop\note-app1\Test\note-app\src\test\java\com\example\noteapp\NoteControllerTest.java
+C:\Users\ponrn\OneDrive\Desktop\note-app1\Test\note-app\src\test\java\com\example\noteapp\integration\AuthIntegrationTest.java
+C:\Users\ponrn\OneDrive\Desktop\note-app1\Test\note-app\src\test\java\com\example\noteapp\unit\NoteServiceTest.java
+C:\Users\ponrn\OneDrive\Desktop\note-app1\Test\note-app\src\test\java\com\example\noteapp\integration\NoteControllerTest.java
+C:\Users\ponrn\OneDrive\Desktop\note-app1\Test\note-app\src\test\java\com\example\noteapp\integration\SecurityIntegrationTest.java
+C:\Users\ponrn\OneDrive\Desktop\note-app1\Test\note-app\src\test\java\com\example\noteapp\unit\validator\NoteValidatorTest.java
+C:\Users\ponrn\OneDrive\Desktop\note-app1\Test\note-app\src\test\java\com\example\noteapp\unit\UserServiceTest.java
