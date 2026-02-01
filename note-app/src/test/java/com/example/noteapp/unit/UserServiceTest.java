@@ -46,7 +46,7 @@ class UserServiceTest {
         when(userRepository.save(any(User.class)))
                 .thenAnswer(invocation -> {
                     User user = invocation.getArgument(0);
-                    user.setId(1); // Устанавливаем ID как будто после сохранения
+                    user.setId(1L); // Устанавливаем ID как будто после сохранения
                     return user;
                 });
 
@@ -113,7 +113,7 @@ class UserServiceTest {
         // Arrange
         String username = "testuser";
         User user = new User();
-        user.setId(1);
+        user.setId(1L);
         user.setUsername(username);
         user.setEmail("test@example.com");
         user.setPassword("encodedPass");
@@ -152,7 +152,7 @@ class UserServiceTest {
         // Arrange
         String username = "testuser";
         User existingUser = new User();
-        existingUser.setId(1);
+        existingUser.setId(1L);
         existingUser.setUsername(username);
         existingUser.setEmail("old@example.com");
         existingUser.setPassword("oldEncodedPass");
@@ -190,7 +190,7 @@ class UserServiceTest {
         // Arrange
         String username = "testuser";
         User existingUser = new User();
-        existingUser.setId(1);
+        existingUser.setId(1L);
         existingUser.setUsername(username);
         existingUser.setEmail("test@example.com");
         existingUser.setRole("USER");
@@ -214,7 +214,7 @@ class UserServiceTest {
         // Arrange
         String username = "testuser";
         User existingUser = new User();
-        existingUser.setId(1);
+        existingUser.setId(1L);
         existingUser.setUsername(username);
         existingUser.setEmail("test@example.com");
         existingUser.setRole("USER");

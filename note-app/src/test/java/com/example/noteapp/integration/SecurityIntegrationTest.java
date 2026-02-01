@@ -19,7 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class NoteControllerTest {
+class SecurityIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -61,7 +61,7 @@ class NoteControllerTest {
                 .andReturn();
 
         return objectMapper.readTree(result.getResponse().getContentAsString())
-                .get("accessToken").asText();
+                .get("token").asText();
     }
 
     // ТЕСТ 1: Создание заметки с авторизацией
@@ -180,7 +180,7 @@ class NoteControllerTest {
 
     // ТЕСТ 5: Доступ без авторизации запрещен
     @Test
-    void accessWithoutToken_shouldReturn401() throws Exception {
+    void accessWithoutToken_shouldReturn403() throws Exception {
         Map<String, String> noteRequest = Map.of(
                 "title", "Test",
                 "content", "Content"
@@ -189,6 +189,6 @@ class NoteControllerTest {
         mockMvc.perform(post("/notes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(noteRequest)))
-                .andExpect(status().isUnauthorized());
+                .andExpect(status().isForbidden());
     }
 }

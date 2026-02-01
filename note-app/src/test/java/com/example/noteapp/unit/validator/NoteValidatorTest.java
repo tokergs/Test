@@ -76,7 +76,7 @@ class NoteValidatorTest {
 
     private User createTestUser() {
         User user = new User();
-        user.setId(1);
+        user.setId(1L);
         user.setUsername("testuser");
         user.setEmail("test@example.com");
         user.setPassword("password"); // если есть поле password

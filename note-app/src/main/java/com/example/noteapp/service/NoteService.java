@@ -50,7 +50,7 @@ public class NoteService {
 
     private NoteResponseDto toDto(Note note) {
         NoteResponseDto dto = new NoteResponseDto();
-        dto.id = note.getId().intValue();
+        dto.id = note.getId();
         dto.title = note.getTitle();
         dto.content = note.getContent();
         dto.createdAt = note.getCreatedAt().toString();

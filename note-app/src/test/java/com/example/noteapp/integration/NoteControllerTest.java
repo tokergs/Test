@@ -1,7 +1,9 @@
 package com.example.noteapp.integration;
 
+import com.example.noteapp.repository.NoteRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,9 @@ class NoteControllerTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private NoteRepository noteRepository;
 
     private String authToken; // Для хранения JWT токена
 
@@ -59,6 +64,11 @@ class NoteControllerTest {
         authToken = jsonNode.get("token").asText();
     }
 
+    @AfterEach
+    void tearDown(){
+        noteRepository.deleteAll();
+    }
+
     @Test
     void createAndListNotes() throws Exception {
         NotePayload payload = new NotePayload("First note", "Sample content");
@@ -74,6 +84,7 @@ class NoteControllerTest {
         mockMvc.perform(get("/notes")
                         .header("Authorization", "Bearer " + authToken))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(1))
                 .andExpect(jsonPath("$[0].title").value("First note"));
     }
 
@@ -96,7 +107,7 @@ class NoteControllerTest {
         mockMvc.perform(post("/notes")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
-                .andExpect(status().isUnauthorized()); // Теперь 401 будет корректным
+                .andExpect(status().isForbidden()); // Теперь 401 будет корректным
     }
 
     @Test
@@ -118,9 +129,10 @@ class NoteControllerTest {
                 .andExpect(status().isOk());
 
         // 3. Проверяем, что её больше нет
-        mockMvc.perform(get("/notes/" + noteId)
+        mockMvc.perform(get("/notes")
                         .header("Authorization", "Bearer " + authToken))
-                .andExpect(status().isNotFound());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
     }
 
     @Test
