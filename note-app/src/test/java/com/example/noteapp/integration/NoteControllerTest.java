@@ -1,6 +1,7 @@
 package com.example.noteapp.integration;
 
 import com.example.noteapp.repository.NoteRepository;
+import com.example.noteapp.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
@@ -29,6 +30,8 @@ class NoteControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private UserRepository userRepository;
     @Autowired
     private NoteRepository noteRepository;
 
@@ -67,6 +70,7 @@ class NoteControllerTest {
     @AfterEach
     void tearDown(){
         noteRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     @Test

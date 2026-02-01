@@ -27,168 +27,73 @@ class SecurityIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    private String authTokenUser1;
-    private String authTokenUser2;
+    private String authToken;
 
     @BeforeEach
     void setUp() throws Exception {
-        // 1. Регистрируем и логиним первого пользователя
-        authTokenUser1 = registerAndLogin("user1", "user1@test.com", "Pass123!");
-
-        // 2. Регистрируем и логиним второго пользователя
-        authTokenUser2 = registerAndLogin("user2", "user2@test.com", "Pass123!");
-    }
-
-    private String registerAndLogin(String username, String email, String password) throws Exception {
-        // Регистрация
-        Map<String, String> registerRequest = new HashMap<>();
-        registerRequest.put("username", username);
-        registerRequest.put("email", email);
-        registerRequest.put("password", password);
+        Map<String, String> registerRequest = Map.of(
+                "username", "securityUser",
+                "email", "security@example.com",
+                "password", "SecurePass123!"
+        );
 
         mockMvc.perform(post("/users/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(registerRequest)));
 
-        // Логин
-        Map<String, String> loginRequest = new HashMap<>();
-        loginRequest.put("username", username);
-        loginRequest.put("password", password);
-
         MvcResult result = mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(loginRequest)))
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "username", "securityUser",
+                                "password", "SecurePass123!"
+                        ))))
                 .andReturn();
 
-        return objectMapper.readTree(result.getResponse().getContentAsString())
+        authToken = objectMapper.readTree(result.getResponse().getContentAsString())
                 .get("token").asText();
     }
 
-    // ТЕСТ 1: Создание заметки с авторизацией
+    // 1. Обязательный тест: Security Headers
     @Test
-    void createNote_shouldReturn201() throws Exception {
-        Map<String, String> noteRequest = Map.of(
-                "title", "Test Note",
-                "content", "Test Content"
-        );
-
-        mockMvc.perform(post("/notes")
-                        .header("Authorization", "Bearer " + authTokenUser1)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(noteRequest)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.title").value("Test Note"))
-                .andExpect(jsonPath("$.content").value("Test Content"))
-                .andExpect(jsonPath("$.createdAt").exists());
-    }
-
-    // ТЕСТ 2: Получение списка только своих заметок
-    @Test
-    void getNotes_shouldReturnOnlyOwnNotes() throws Exception {
-        // User1 создает заметку
-        Map<String, String> noteRequest1 = Map.of(
-                "title", "User1 Note",
-                "content", "Content 1"
-        );
-
-        mockMvc.perform(post("/notes")
-                        .header("Authorization", "Bearer " + authTokenUser1)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(noteRequest1)))
-                .andExpect(status().isCreated());
-
-        // User2 создает свою заметку
-        Map<String, String> noteRequest2 = Map.of(
-                "title", "User2 Note",
-                "content", "Content 2"
-        );
-
-        mockMvc.perform(post("/notes")
-                        .header("Authorization", "Bearer " + authTokenUser2)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(noteRequest2)))
-                .andExpect(status().isCreated());
-
-        // User1 должен видеть только свою заметку
+    void securityHeaders_shouldBePresent() throws Exception {
         mockMvc.perform(get("/notes")
-                        .header("Authorization", "Bearer " + authTokenUser1))
+                        .header("Authorization", "Bearer " + authToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].title").value("User1 Note"));
+                .andExpect(header().string("X-Content-Type-Options", "nosniff"))
+                .andExpect(header().string("X-Frame-Options", "SAMEORIGIN"))
+                .andExpect(header().exists("Content-Security-Policy"))
+                .andExpect(header().exists("Referrer-Policy"));
     }
 
-    // ТЕСТ 3: Удаление своей заметки
+    // 2. Stateless JWT аутентификация
     @Test
-    void deleteOwnNote_shouldReturnSuccess() throws Exception {
-        // Создаем заметку
-        Map<String, String> noteRequest = Map.of(
-                "title", "Note to delete",
-                "content", "Content"
-        );
-
-        String response = mockMvc.perform(post("/notes")
-                        .header("Authorization", "Bearer " + authTokenUser1)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(noteRequest)))
-                .andReturn().getResponse().getContentAsString();
-
-        String noteId = objectMapper.readTree(response).get("id").asText();
-
-        // Удаляем свою заметку
-        mockMvc.perform(delete("/notes/" + noteId)
-                        .header("Authorization", "Bearer " + authTokenUser1))
-                .andExpect(status().isOk())
-                .andExpect(content().string("Note deleted successfully"));
-
-        // Проверяем, что список теперь пустой
+    void jwtAuthentication_shouldBeStateless() throws Exception {
         mockMvc.perform(get("/notes")
-                        .header("Authorization", "Bearer " + authTokenUser1))
+                        .header("Authorization", "Bearer " + authToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(0));
+                .andExpect(cookie().doesNotExist("JSESSIONID"));
     }
 
-    // ТЕСТ 4: Нельзя удалить чужую заметку
+    // 3. Public endpoints доступны
     @Test
-    void deleteOtherUsersNote_shouldReturn403() throws Exception {
-        // User1 создает заметку
-        Map<String, String> noteRequest = Map.of(
-                "title", "User1's Note",
-                "content", "Content"
-        );
-
-        String response = mockMvc.perform(post("/notes")
-                        .header("Authorization", "Bearer " + authTokenUser1)
+    void registrationAndLogin_shouldBePublic() throws Exception {
+        // Регистрация
+        mockMvc.perform(post("/users/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(noteRequest)))
-                .andReturn().getResponse().getContentAsString();
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "username", "publicUser",
+                                "email", "public@example.com",
+                                "password", "PublicPass123!"
+                        ))))
+                .andExpect(status().is2xxSuccessful());
 
-        String noteId = objectMapper.readTree(response).get("id").asText();
-
-        // User2 пытается удалить заметку User1
-        mockMvc.perform(delete("/notes/" + noteId)
-                        .header("Authorization", "Bearer " + authTokenUser2))
-                .andExpect(status().isForbidden());
-
-        // User1 всё еще должен видеть свою заметку
-        mockMvc.perform(get("/notes")
-                        .header("Authorization", "Bearer " + authTokenUser1))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.length()").value(1))
-                .andExpect(jsonPath("$[0].title").value("User1's Note"));
-    }
-
-    // ТЕСТ 5: Доступ без авторизации запрещен
-    @Test
-    void accessWithoutToken_shouldReturn403() throws Exception {
-        Map<String, String> noteRequest = Map.of(
-                "title", "Test",
-                "content", "Content"
-        );
-
-        mockMvc.perform(post("/notes")
+        // Логин
+        mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(noteRequest)))
-                .andExpect(status().isForbidden());
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "username", "publicUser",
+                                "password", "PublicPass123!"
+                        ))))
+                .andExpect(status().isOk());
     }
 }
