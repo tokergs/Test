@@ -21,9 +21,13 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.server.ResponseStatusException;
+
 import java.util.List;
 
 @RestController
@@ -69,6 +73,12 @@ public class NoteController {
     @DeleteMapping("/{id}")
     public String deleteNote(@PathVariable Long id) {
         User currentUser = getCurrentUser();
+        List<NoteResponseDto> notes = noteService.getUserNotes(currentUser);
+        if(!notes.stream().map(n->n.id).toList().contains(id)){
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND, "entity not found"
+            );
+        }
         noteService.delete(id, currentUser);
         return "Note deleted successfully";
     }

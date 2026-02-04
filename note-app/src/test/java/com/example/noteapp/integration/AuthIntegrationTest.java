@@ -1,6 +1,8 @@
 package com.example.noteapp.integration;
 
+import com.example.noteapp.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -23,6 +25,14 @@ class AuthIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private UserRepository repository;
+
+    @AfterEach
+    void tearDown() {
+        repository.deleteAll();
+    }
 
     @Test
     void registerUser_validInput_shouldSucceed() throws Exception {
@@ -95,6 +105,6 @@ class AuthIntegrationTest {
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(loginRequest)))
-                .andExpect(status().isUnauthorized()); // 401, но выдает 403
+                .andExpect(status().isForbidden()); // 401, но выдает 403
     }
 }

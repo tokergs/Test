@@ -40,9 +40,6 @@ class NoteServiceTest {
         request.setTitle("Test Note");
         request.setContent("Test Content");
 
-        when(mockUser.getId()).thenReturn(1);
-        when(mockUser.getUsername()).thenReturn("user1");
-
         Note savedNote = new Note("Test Note", "Test Content", mockUser);
         when(noteRepository.save(any(Note.class))).thenReturn(savedNote);
 
@@ -67,10 +64,6 @@ class NoteServiceTest {
     @Test
     void getUserNotes_shouldReturnOnlyUsersNotes() {
         // Arrange
-        User mockUser2 = mock(User.class);
-        when(mockUser2.getId()).thenReturn(2);
-        when(mockUser2.getUsername()).thenReturn("user2");
-
         Note note1 = new Note("Note 1", "Content 1", mockUser);
         Note note2 = new Note("Note 2", "Content 2", mockUser);
 
@@ -98,7 +91,7 @@ class NoteServiceTest {
         note.setContent("Content");
         note.setCreator(mockUser);
 
-        when(mockUser.getId()).thenReturn(1);
+        when(mockUser.getId()).thenReturn(1L);
         when(noteRepository.findById(noteId)).thenReturn(Optional.of(note));
 
         // Act & Assert - теперь void, не возвращает boolean
@@ -113,7 +106,6 @@ class NoteServiceTest {
         // Arrange
         Long noteId = 1L;
 
-        when(mockUser.getId()).thenReturn(1);
         when(noteRepository.findById(noteId)).thenReturn(Optional.empty());
 
         // Act & Assert
@@ -130,14 +122,14 @@ class NoteServiceTest {
         Long noteId = 1L;
 
         User otherUser = mock(User.class);
-        when(otherUser.getId()).thenReturn(2);
+        when(otherUser.getId()).thenReturn(2L);
 
         Note note = new Note();
         note.setTitle("Test");
         note.setContent("Content");
         note.setCreator(otherUser);
 
-        when(mockUser.getId()).thenReturn(1);
+        when(mockUser.getId()).thenReturn(1L);
         when(noteRepository.findById(noteId)).thenReturn(Optional.of(note));
 
         // Act & Assert
