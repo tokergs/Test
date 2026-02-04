@@ -7,7 +7,9 @@ import com.example.noteapp.model.User;
 import com.example.noteapp.service.NoteService;
 import com.example.noteapp.repository.UserRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -35,52 +37,43 @@ import java.util.List;
 public class NoteController {
 
     private static final Logger logger = LoggerFactory.getLogger(NoteController.class);
-    private final NoteService noteService;
-    private final UserRepository userRepository;
+    private final NoteService noteService; // ← ТОЛЬКО ОДНА ЗАВИСИМОСТЬ
 
-    public NoteController(NoteService noteService,
-                          UserRepository userRepository) {
+    public NoteController(NoteService noteService) { // ← ТОЛЬКО ОДИН ПАРАМЕТР
         this.noteService = noteService;
-        this.userRepository = userRepository;
     }
 
-    @SecurityRequirement(name = "bearerAuth")
+    @SecurityRequirement(name = "bearerAuth") // ← ОСТАЛОСЬ
     @GetMapping
-    public List<NoteResponseDto> listNotes() {
-        User currentUser = getCurrentUser();
-
-        // ДОБАВЬ ЛОГИРОВАНИЕ:
+    public ResponseEntity<List<NoteResponseDto>> listNotes(@AuthenticationPrincipal User currentUser) { // ← ДОБАВЛЕНО @AuthenticationPrincipal
         logger.info("User {} is accessing their notes", currentUser.getUsername());
-        return noteService.getUserNotes(getCurrentUser());
+        List<NoteResponseDto> notes = noteService.getUserNotes(currentUser); // ← ПЕРЕДАЁМ currentUser
+        return ResponseEntity.ok(notes); // ← ОБЕРНУЛИ В ResponseEntity
     }
 
+    @SecurityRequirement(name = "bearerAuth") // ← ДОБАВЛЕНО
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public NoteResponseDto createNote(@Valid @RequestBody NoteRequestDto request) {
-        return noteService.create(request, getCurrentUser());
+    public ResponseEntity<NoteResponseDto> createNote( // ← ИЗМЕНИЛИ ВОЗВРАЩАЕМЫЙ ТИП
+                                                       @Valid @RequestBody NoteRequestDto request,
+                                                       @AuthenticationPrincipal User currentUser) { // ← ДОБАВЛЕНО @AuthenticationPrincipal
+
+        logger.info("User {} is creating a note with title: {}",
+                currentUser.getUsername(), request.getTitle()); // ← ДОБАВЛЕНО ЛОГИРОВАНИЕ
+        NoteResponseDto note = noteService.create(request, currentUser); // ← ПЕРЕДАЁМ currentUser
+        return ResponseEntity.status(HttpStatus.CREATED).body(note); // ← ОБЕРНУЛИ В ResponseEntity
     }
 
-    private User getCurrentUser() {
-        Authentication authentication =
-                SecurityContextHolder.getContext().getAuthentication();
-
-        String username = authentication.getName();
-
-        return userRepository.findByUsername(username)
-                .orElseThrow();
-    }
-
+    @SecurityRequirement(name = "bearerAuth") // ← ДОБАВЛЕНО
     @DeleteMapping("/{id}")
-    public String deleteNote(@PathVariable Long id) {
-        User currentUser = getCurrentUser();
-        List<NoteResponseDto> notes = noteService.getUserNotes(currentUser);
-        if(!notes.stream().map(n->n.id).toList().contains(id)){
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND, "entity not found"
-            );
-        }
-        noteService.delete(id, currentUser);
-        return "Note deleted successfully";
+    public ResponseEntity<String> deleteNote( // ← ИЗМЕНИЛИ ВОЗВРАЩАЕМЫЙ ТИП
+                                              @PathVariable Long id,
+                                              @AuthenticationPrincipal User currentUser) { // ← ДОБАВЛЕНО @AuthenticationPrincipal
+
+        logger.info("User {} is deleting note with id: {}",
+                currentUser.getUsername(), id); // ← ДОБАВЛЕНО ЛОГИРОВАНИЕ
+        noteService.delete(id, currentUser); // ← ПЕРЕДАЁМ currentUser
+        return ResponseEntity.ok("Note deleted successfully"); // ← ОБЕРНУЛИ В ResponseEntity
     }
 
+    // УДАЛЕНЫ: метод getCurrentUser() и лишняя проверка в deleteNote
 }

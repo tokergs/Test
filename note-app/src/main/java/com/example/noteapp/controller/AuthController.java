@@ -4,13 +4,14 @@ import com.example.noteapp.dto.AuthRequestDto;
 import com.example.noteapp.dto.AuthResponseDto;
 import com.example.noteapp.dto.RefreshTokenRequestDto;
 import com.example.noteapp.model.User;
-import com.example.noteapp.repository.UserRepository;
+import com.example.noteapp.service.CustomUserDetailsService;
 import com.example.noteapp.service.JwtService;
 import com.example.noteapp.service.RefreshTokenService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -20,18 +21,18 @@ public class AuthController {
     private static final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     private final AuthenticationManager authenticationManager;
+    private final CustomUserDetailsService userDetailsService;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
-    private final UserRepository userRepository;
 
     public AuthController(AuthenticationManager authenticationManager,
+                          CustomUserDetailsService userDetailsService,
                           JwtService jwtService,
-                          RefreshTokenService refreshTokenService,
-                          UserRepository userRepository) {
+                          RefreshTokenService refreshTokenService) {
         this.authenticationManager = authenticationManager;
+        this.userDetailsService = userDetailsService;
         this.jwtService = jwtService;
         this.refreshTokenService = refreshTokenService;
-        this.userRepository = userRepository;
     }
 
     @PostMapping("/login")
@@ -47,9 +48,11 @@ public class AuthController {
                     )
             );
 
-            // Получаем пользователя
-            User user = userRepository.findByUsername(request.username())
-                    .orElseThrow(() -> new RuntimeException("User not found"));
+            // Получаем пользователя через UserDetailsService
+            UserDetails userDetails = userDetailsService.loadUserByUsername(request.username());
+
+            // Приводим к User (если CustomUserDetailsService возвращает User)
+            User user = (User) userDetails;
 
             // Генерируем access token
             String accessToken = jwtService.generateToken(request.username());
@@ -78,7 +81,7 @@ public class AuthController {
             // Отзываем старый refresh token (ROTATION!)
             refreshTokenService.revokeRefreshToken(request.refreshToken());
 
-            // Получаем пользователя
+            // Получаем пользователя из refresh token
             User user = refreshToken.getUser();
 
             // Генерируем новый access token
