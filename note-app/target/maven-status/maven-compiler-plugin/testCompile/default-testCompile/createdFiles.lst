@@ -1,5 +1,7 @@
 com\example\noteapp\integration\NoteControllerTest.class
-com\example\noteapp\unit\UserServiceTest.class
-com\example\noteapp\unit\validator\NoteValidatorTest.class
 com\example\noteapp\integration\AuthIntegrationTest.class
+com\example\noteapp\integration\SecurityIntegrationTest.class
+com\example\noteapp\unit\UserServiceTest.class
+com\example\noteapp\integration\NoteControllerTest$NotePayload.class
+com\example\noteapp\unit\validator\NoteValidatorTest.class
 com\example\noteapp\unit\NoteServiceTest.class
