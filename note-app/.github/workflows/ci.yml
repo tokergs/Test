@@ -1,0 +1,43 @@
+name: CI Pipeline
+
+# Когда запускается:
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Получить код из репозитория
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. Установить Java 17
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      # 3. Запустить тесты с покрытием
+      - name: Run tests with Maven
+        run: mvn clean verify
+
+      # 4. (ОПЦИОНАЛЬНО) Проверить покрытие
+      - name: Check coverage percentage
+        run: |
+          echo "Отчет JaCoCo сгенерирован в target/site/jacoco/"
+          echo "Открыть index.html для просмотра покрытия"
+
+      # 5. (ОПЦИОНАЛЬНО) Сохранить отчет
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jacoco-coverage-report
+          path: target/site/jacoco/
