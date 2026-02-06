@@ -20,7 +20,7 @@ public class Note {
     private Instant createdAt = Instant.now();
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id", nullable = false) // привязка к пользователю через внешний ключ user_id
     private User creator;
 
     public Note() {

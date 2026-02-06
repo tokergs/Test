@@ -5,7 +5,9 @@ import com.example.noteapp.dto.NoteResponseDto;
 import com.example.noteapp.model.Note;
 import com.example.noteapp.model.User;
 import com.example.noteapp.repository.NoteRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Optional;
@@ -39,7 +41,7 @@ public class NoteService {
 
     public void delete(Long id, User user) {
         Note note = noteRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Note not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Note not found"));
 
         if (!note.getCreator().getId().equals(user.getId())) {
             throw new RuntimeException("Access denied: You do not own this note");
